@@ -8,14 +8,11 @@ class BinarySearch {
     val array = listOf<Int>(1, 3, 6, 7, 8, 9, 13, 16, 19, 24, 33, 32, 25, 13, 7, 4, 2)
 
     fun findVertexIndex(source: List<Int>, primal: List<Int>): Int {
-        val mid: Int = source[source.size / 2]
-
-        val prevArray = source.slice(0..source.indexOf(mid))
-        val nextArray = source.slice(source.indexOf(mid)..source.lastIndex)
-
-        return when (mid) {
-            in (source[source.size / 2 - 1] + 1) until source[source.size / 2 + 1] -> findVertexIndex(nextArray, primal)
-            in (source[source.size / 2 + 1] + 1) until source[source.size / 2 - 1] -> findVertexIndex(prevArray, primal)
+        return when (val mid: Int = source[source.size / 2]) {
+            in (source[source.size / 2 - 1] + 1) until source[source.size / 2 + 1] ->
+                findVertexIndex(source.slice(source.indexOf(mid)..source.lastIndex), primal)
+            in (source[source.size / 2 + 1] + 1) until source[source.size / 2 - 1] ->
+                findVertexIndex(source.slice(0..source.indexOf(mid)), primal)
             else -> primal.indexOf(mid)
         }
     }
