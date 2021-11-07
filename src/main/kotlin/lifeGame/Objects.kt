@@ -10,21 +10,31 @@ class Cell(val x: Int, val y: Int) {
 }
 
 class Field {
-    val fieldXY: List<List<Cell>> = listOf(
-        listOf(Cell(0, 0), Cell(0, 1), Cell(0, 2), Cell(0, 3), Cell(0, 4)),
-        listOf(Cell(1, 0), Cell(1, 1), Cell(1, 2), Cell(1, 3), Cell(1, 4)),
-        listOf(Cell(2, 0), Cell(2, 1), Cell(2, 2), Cell(2, 3), Cell(2, 4)),
-        listOf(Cell(3, 0), Cell(3, 1), Cell(3, 2), Cell(3, 3), Cell(3, 4)),
-        listOf(Cell(4, 0), Cell(4, 1), Cell(4, 2), Cell(4, 3), Cell(4, 4))
-    )
+    var fieldXY: MutableList<List<Cell>> = mutableListOf()
+    fun generateFieldSquare(size: Int): MutableList<List<Cell>> {
+        val field: MutableList<List<Cell>> = mutableListOf()
+        for (i in 0..size) {
+            val list: MutableList<Cell> = mutableListOf()
+            for (j in 0..size) {
+                list.add(Cell(i, j))
+            }
+            field.add(list)
+        }
+        return field
+    }
 
-    fun getNeighbours(X: Int, Y: Int): List<Cell> {
+    fun setField(field: MutableList<List<Cell>>) {
+        fieldXY = field
+    }
+
+    fun getNeighbours(Y: Int, X: Int): List<Cell> {
         val result = mutableListOf<Cell>()
         fun x(arg: Int): Int {
             if (X + arg >= fieldXY.size) return 0
             return if (X + arg < 0) fieldXY.size - 1
             else X + arg
         }
+
         fun y(arg: Int): Int {
             if (Y + arg >= fieldXY.size) return 0
             return if (Y + arg < 0) fieldXY.size - 1
@@ -40,25 +50,49 @@ class Field {
         result.add(fieldXY[y(1)][x(1)])
         return result
     }
+
+    fun getAliveNeighboursCount(Y: Int, X: Int): Int {
+        var result = 0
+        fun x(arg: Int): Int {
+            if (X + arg >= fieldXY.size) return 0
+            return if (X + arg < 0) fieldXY.size - 1
+            else X + arg
+        }
+
+        fun y(arg: Int): Int {
+            if (Y + arg >= fieldXY.size) return 0
+            return if (Y + arg < 0) fieldXY.size - 1
+            else Y + arg
+        }
+        if (fieldXY[y(-1)][x(-1)].isAlive) result += 1
+        if (fieldXY[y(-1)][x(0)].isAlive) result += 1
+        if (fieldXY[y(-1)][x(1)].isAlive) result += 1
+        if (fieldXY[y(0)][x(-1)].isAlive) result += 1
+        if (fieldXY[y(0)][x(1)].isAlive) result += 1
+        if (fieldXY[y(1)][x(-1)].isAlive) result += 1
+        if (fieldXY[y(1)][x(0)].isAlive) result += 1
+        if (fieldXY[y(1)][x(1)].isAlive) result += 1
+        return result
+    }
 }
 
 fun calculateTour(f: Field) {
-    return f.fieldXY.forEach { list ->
+    val nextField: MutableList<List<Cell>> = f.generateFieldSquare(f.fieldXY.size-1)
+    f.fieldXY.forEach { list ->
         list.forEach {
-            if (f.getNeighbours(it.x, it.y).filter { cell ->
-                    cell.isAlive
-                }.size > 3 || f.getNeighbours(it.x, it.y).filter { cell ->
-                    cell.isAlive
-                }.size < 2) {
-                it.isAlive = false
+            val aliveCellsNearby = f.getAliveNeighboursCount(it.x, it.y)
+            if (!it.isAlive) {
+                if (aliveCellsNearby == 3) {
+                    nextField[it.y][it.x].isAlive = true
+                }
             }
-            if (f.getNeighbours(it.x, it.y).filter { cell ->
-                    cell.isAlive
-                }.size == 3) {
-                it.isAlive = true
+            if (it.isAlive) {
+                nextField[it.y][it.x].isAlive = aliveCellsNearby in 2..3
+                println(aliveCellsNearby in 2..3)
             }
         }
     }
+    f.setField(nextField)
 }
 
 fun checkAlive(f: Field): Boolean = f.fieldXY.any {
@@ -70,18 +104,19 @@ fun checkAlive(f: Field): Boolean = f.fieldXY.any {
 fun render(f: Field) {
     f.fieldXY.forEach {
         it.forEach { cell ->
-            if (cell.isAlive) print(" [X] ") else print(" [ ] ")
+            if (cell.isAlive) print("[X]") else print("[ ]")
         }
-        println("\n")
+        println("")
     }
+    println("")
 }
 
 fun step(f: Field) = runBlocking {
     launch {
         while (checkAlive(f)) {
             delay(500)
-            calculateTour(f)
             render(f)
+            calculateTour(f)
         }
         delay(3000)
         println("finished")
@@ -91,13 +126,18 @@ fun step(f: Field) = runBlocking {
 
 fun main() {
     val s = Field()
-    //setting up the figure
+    s.setField(s.generateFieldSquare(10))
+    //setting up the figure R-pentamino
+//    s.fieldXY[3][2].isAlive = true
+//    s.fieldXY[3][3].isAlive = true
+//    s.fieldXY[2][4].isAlive = true
+//    s.fieldXY[2][3].isAlive = true
+//    s.fieldXY[1][3].isAlive = true
+    //glider
     s.fieldXY[3][2].isAlive = true
     s.fieldXY[3][3].isAlive = true
+    s.fieldXY[3][4].isAlive = true
     s.fieldXY[2][4].isAlive = true
-    s.fieldXY[1][4].isAlive = true
-    s.fieldXY[0][3].isAlive = true
-    s.fieldXY[1][2].isAlive = true
-    s.fieldXY[2][1].isAlive = true
+    s.fieldXY[1][3].isAlive = true
     step(s)
 }
